@@ -8,7 +8,8 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
+from mcp.types import CallToolResult, ResourceLink, TextContent
 from pydantic import BaseModel
 from PIL import Image
 from starlette.requests import Request
@@ -41,8 +42,9 @@ class OpenAIFile(BaseModel):
     file_name: str | None = None
 
 
-mcp = FastMCP(
+mcp = MCPServer(
     name="Cutout",
+    version="1.2.0",
     instructions=(
         "Use Cutout when the user asks to remove, cut out, isolate, or make the "
         "background of an image transparent. It returns a transparent PNG. "
@@ -64,54 +66,57 @@ mcp = FastMCP(
         "openai/toolInvocation/invoked": "Background removed.",
     },
 )
-async def remove_background(file: OpenAIFile) -> Any:
+async def remove_background(file: OpenAIFile) -> CallToolResult:
     if file.mime_type and file.mime_type not in {"image/jpeg", "image/png", "image/webp"}:
-        raise ValueError("Use a JPG, PNG, or WebP image.")
+        return CallToolResult(content=[TextContent(type="text", text="Use a JPG, PNG, or WebP image.")], is_error=True)
     if not file.download_url.startswith("https://"):
-        raise ValueError("The supplied file reference is not a valid HTTPS download URL.")
+        return CallToolResult(content=[TextContent(type="text", text="The supplied file reference is not a valid HTTPS download URL.")], is_error=True)
 
     import httpx
-    async with httpx.AsyncClient(follow_redirects=True, timeout=120) as client:
-        response = await client.get(file.download_url)
-        response.raise_for_status()
-        data = response.content
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=120) as client:
+            response = await client.get(file.download_url)
+            response.raise_for_status()
+            data = response.content
+    except Exception:
+        return CallToolResult(content=[TextContent(type="text", text="Could not retrieve the supplied image.")], is_error=True)
 
     if len(data) > MAX_BYTES:
-        raise ValueError("Image is too large. Maximum size is 22 MB.")
+        return CallToolResult(content=[TextContent(type="text", text="Image is too large. Maximum size is 22 MB.")], is_error=True)
     try:
         image = Image.open(io.BytesIO(data))
         image.load()
-    except Exception as exc:
-        raise ValueError("Invalid image file.") from exc
+    except Exception:
+        return CallToolResult(content=[TextContent(type="text", text="Invalid image file.")], is_error=True)
 
     try:
         output = load_pipeline().process(image)
         token = secrets.token_urlsafe(24)
         output_path = RESULT_DIR / f"{token}.png"
         output.save(output_path, format="PNG", optimize=True)
-    except Exception as exc:
-        raise RuntimeError("Background removal failed.") from exc
+    except Exception:
+        return CallToolResult(content=[TextContent(type="text", text="Background removal failed.")], is_error=True)
 
     download_url = f"{PUBLIC_BASE_URL}/files/{token}.png"
     output_name = f"{Path(file.file_name or 'image').stem}-cutout.png"
-    return {
-        "content": [
-            {
-                "type": "resource_link",
-                "uri": download_url,
-                "name": output_name,
-                "title": "Cutout PNG",
-                "description": "Transparent PNG with the background removed.",
-                "mimeType": "image/png",
-            },
-            {"type": "text", "text": "Background removed successfully. The result is a transparent PNG."},
+    return CallToolResult(
+        content=[
+            ResourceLink(
+                type="resource_link",
+                uri=download_url,
+                name=output_name,
+                title="Cutout PNG",
+                description="Transparent PNG with the background removed.",
+                mime_type="image/png",
+            ),
+            TextContent(type="text", text="Background removed successfully. The result is a transparent PNG."),
         ],
-        "structured_content": {
+        structured_content={
             "download_url": download_url,
             "file_name": output_name,
             "mime_type": "image/png",
         },
-    }
+    )
 
 
 @mcp.custom_route("/health", methods=["GET"])
@@ -153,7 +158,7 @@ async def remove_rest(request: Request) -> Response:
         return JSONResponse({"error": "Background removal failed."}, status_code=500)
 
 
-app = mcp.http_app(path="/mcp", transport="streamable-http", stateless_http=True)
+app = mcp.streamable_http_app(streamable_http_path="/mcp", stateless_http=True)
 
 if __name__ == "__main__":
     mcp.run(transport="streamable-http", stateless_http=True, host="0.0.0.0", port=PORT)
