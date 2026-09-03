@@ -1,7 +1,7 @@
 [project]
 name = "kefe-background-removal"
-version = "1.0.0"
-description = "Self-hosted background removal powered by Lucida"
+version = "1.1.0"
+description = "Cutout — a high-quality self-hosted background removal engine"
 requires-python = ">=3.12"
 dependencies = [
   "torch>=2.4",
@@ -21,11 +21,11 @@ dependencies = [
 ]
 
 [project.scripts]
-bgr = "bgr.cli:main"
+cutout = "cutout.cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["bgr"]
+packages = ["cutout"]
