@@ -158,7 +158,11 @@ async def remove_rest(request: Request) -> Response:
         return JSONResponse({"error": "Background removal failed."}, status_code=500)
 
 
-app = mcp.streamable_http_app(streamable_http_path="/mcp", stateless_http=True)
+app = mcp.streamable_http_app(
+    streamable_http_path="/mcp",
+    stateless_http=True,
+    host="0.0.0.0",
+)
 
 if __name__ == "__main__":
     mcp.run(transport="streamable-http", stateless_http=True, host="0.0.0.0", port=PORT)
