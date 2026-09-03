@@ -2,7 +2,32 @@
 
 **Cutout** is a standalone, self-hosted background-removal engine for clean transparent PNG extraction.
 
-It is deliberately a single-purpose tool: upload an image, Cutout finds the foreground, refines uncertain edges, removes background colour contamination, and returns RGBA PNG.
+It is deliberately a single-purpose tool: upload an image, Cutout finds the foreground, refines uncertain edges, removes background colour contamination, and returns a transparent PNG.
+
+## ChatGPT tool
+
+Cutout now includes a ChatGPT-compatible MCP server. Once the server is deployed at a public HTTPS address, add its `/mcp` endpoint as a private ChatGPT app in Developer Mode.
+
+Then the workflow is simply:
+
+1. Attach an image in ChatGPT.
+2. Ask: **"Remove the background."**
+3. ChatGPT calls `remove_background` automatically.
+4. Cutout returns a transparent PNG as a downloadable MCP resource.
+
+The tool has one fixed processing engine. There is no model selector or processing-mode question.
+
+Set `PUBLIC_BASE_URL` to the public HTTPS origin used by the server, for example `https://cutout.example.com`.
+
+### ChatGPT connection
+
+The MCP endpoint is:
+
+```text
+https://YOUR-DOMAIN/mcp
+```
+
+For local development, run the server on port 8756 and expose it through an HTTPS tunnel before connecting it to ChatGPT. OpenAI's current plugin documentation describes MCP servers as the backend for ChatGPT tools and uses Streamable HTTP for deployed servers.
 
 ## What is adapted
 
@@ -23,7 +48,7 @@ The adapted pipeline adds:
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -e .
-uvicorn serving.app:app --host 0.0.0.0 --port 8756
+uvicorn serving.mcp:app --host 0.0.0.0 --port 8756
 ```
 
 The model weights are downloaded from Hugging Face on first use and cached locally.
@@ -33,6 +58,10 @@ The model weights are downloaded from Hugging Face on first use and cached local
 `POST /remove` — multipart field `file`; accepts JPG, PNG, or WebP and returns a transparent PNG.
 
 `GET /health` — service health and engine information.
+
+`GET /files/<token>.png` — serves generated PNG resources using an unguessable token.
+
+`POST /mcp` — Streamable HTTP MCP endpoint for ChatGPT and other MCP clients.
 
 Example:
 
