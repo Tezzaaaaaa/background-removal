@@ -13,4 +13,4 @@ RUN pip install --no-cache-dir .
 COPY serving/ serving/
 
 EXPOSE 8756
-CMD ["uvicorn", "serving.app:app", "--host", "0.0.0.0", "--port", "8756"]
+CMD ["uvicorn", "serving.mcp:app", "--host", "0.0.0.0", "--port", "8756"]
