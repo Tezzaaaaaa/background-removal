@@ -17,12 +17,12 @@
 
 ## Setup
 
-The normal user experience is designed to require **no Terminal commands**.
+The normal user experience requires **no Terminal commands** and does not require Python to be installed first.
 
 1. Download **Background Removal**.
 2. Open the app.
 3. Select **Set Up** on first launch.
-4. Let setup install the local processing environment and required AI model.
+4. Let setup install its private runtime, required packages, and AI model.
 5. When setup says **You're ready**, use Finder normally.
 
 Then:
@@ -43,14 +43,13 @@ The setup app automatically prepares the private runtime under:
 ~/Library/Application Support/Background Removal/
 ```
 
-It installs the required Python packages, downloads the AI model once, and installs the Finder workflow. The user does not need to create a virtual environment, run `pip`, configure a Shortcut, or enter shell commands manually.
+It installs a private Python runtime, the required packages, downloads and verifies the AI model once, and installs the Finder workflow. The user does not need to install Python, create a virtual environment, run `pip`, configure a Shortcut, or enter shell commands manually.
 
 An internet connection is required during first-time setup to obtain the required components and model. Image processing itself is local.
 
 ## Requirements
 
 - macOS 10.15 or later
-- Python 3.10–3.13 available to the setup bootstrap
 - Internet connection for first-time setup
 
 ## Developer build
