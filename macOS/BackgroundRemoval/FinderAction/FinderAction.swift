@@ -1,6 +1,7 @@
 import Foundation
 import UniformTypeIdentifiers
 
+@objc(FinderAction)
 final class FinderAction: NSObject, NSExtensionRequestHandling {
     func beginRequest(with context: NSExtensionContext) {
         let items = context.inputItems.compactMap { $0 as? NSExtensionItem }
