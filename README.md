@@ -9,7 +9,7 @@
 
 <p align="center">
   <b>One-click background removal right from Finder</b><br>
-  100% local • No internet required • No account • Completely free
+  100% local after setup • No account • Completely free
 </p>
 
 ---
@@ -136,16 +136,16 @@ bg-removal-tool/
 └── README.md               # This file
 ```
 
-## 🤝 Contributing
-
-Contributions are welcome! Please open an issue or submit a PR.
-
 ## 📄 License
 
-MIT License – use it however you like.
+The project code is licensed under the **MIT License**.
+
+The U²-Net model is a separate third-party component and is **not bundled with this repository**. It is downloaded at first run from a pinned model revision identified as **Apache License 2.0**, with SHA-256 verification before use. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for model provenance, attribution, and dependency licence information.
+
+The MIT licence for this project does not relicense third-party dependencies or model weights. Each third-party component remains subject to its own licence.
 
 ---
 
 <p align="center">
-  Made with ❤️ for macOS users who just want to remove backgrounds without the cloud
+  Made for macOS users who just want to remove backgrounds without the cloud
 </p>
