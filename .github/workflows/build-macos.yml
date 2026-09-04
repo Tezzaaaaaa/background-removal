@@ -1,0 +1,24 @@
+name: Build macOS app
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "macOS/BackgroundRemoval/**"
+      - "remove_bg.py"
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build application
+        run: bash macOS/BackgroundRemoval/build-app.sh
+
+      - name: Upload macOS package
+        uses: actions/upload-artifact@v4
+        with:
+          name: background-removal-macos
+          path: macOS/BackgroundRemoval/.build-app/dist/Background-Removal-macOS.zip
