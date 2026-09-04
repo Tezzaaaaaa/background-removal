@@ -1,151 +1,117 @@
-# Background Remover for macOS
-
-<p align="center">
-  <img src="https://img.shields.io/badge/macOS-10.15+-blue.svg" alt="macOS"/>
-  <img src="https://img.shields.io/badge/python-3.10--3.13-blue.svg" alt="Python"/>
-  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"/>
-  <img src="https://img.shields.io/badge/status-stable-brightgreen.svg" alt="Status"/>
-</p>
+# Background Removal for macOS
 
 <p align="center">
   <b>One-click background removal right from Finder</b><br>
-  100% local • No internet required • No account • Completely free
+  Local processing • No account • No cloud upload
 </p>
 
 ---
 
-## ✨ Features
+## What it does
 
-- **Finder Integration** – Right-click any image → Quick Actions → Remove Background
-- **Batch Processing** – Select multiple images at once
-- **100% Local** – Everything runs on your machine, nothing leaves your Mac
-- **One-Time Setup** – Downloads a single AI model (~176MB) and you're done
-- **Lightweight** – Minimal dependencies, no compiler required
+- Automatically removes backgrounds from images.
+- Creates transparent PNGs next to the original image.
+- Processes images locally on your Mac.
+- Uses U²-Net for the lightweight Finder workflow.
+- Supports batch processing from Finder.
 
-## 📸 Demo
+## Setup
 
+The normal user experience is designed to require **no Terminal commands**.
+
+1. Download **Background Removal**.
+2. Open the app.
+3. Select **Set Up** on first launch.
+4. Let setup install the local processing environment and required AI model.
+5. When setup says **You're ready**, use Finder normally.
+
+Then:
+
+**Finder → select an image → right-click → Quick Actions → Remove Background**
+
+The resulting transparent PNG is saved beside the original as:
+
+```text
+photo-nobg.png
 ```
-Right-click an image → Quick Actions → Remove Background
-                    ↓
-         "photo-nobg.png" appears next to the original
-                    ↓
-            Background removed. Done.
+
+### What first-run setup does
+
+The setup app automatically prepares the private runtime under:
+
+```text
+~/Library/Application Support/Background Removal/
 ```
 
-## 🚀 Installation
+It installs the required Python packages, downloads the AI model once, and installs the Finder workflow. The user does not need to create a virtual environment, run `pip`, configure a Shortcut, or enter shell commands manually.
 
-### Prerequisites
+An internet connection is required during first-time setup to obtain the required components and model. Image processing itself is local.
+
+## Requirements
 
 - macOS 10.15 or later
-- Python 3.10–3.13 (Homebrew recommended)
+- Python 3.10–3.13 available to the setup bootstrap
+- Internet connection for first-time setup
 
-### One‑Line Setup
+## Developer build
 
-```bash
-git clone https://github.com/yourusername/bg-removal-tool.git ~/bg-removal-tool
-cd ~/bg-removal-tool
-bash install.sh
-```
+The repository includes the macOS setup application sources under `macOS/BackgroundRemoval/`.
 
-The install script will:
-1. Create a private Python virtual environment at `~/.background-removal-tool/venv`
-2. Download the AI model (~176MB)
-3. Install minimal dependencies: `onnxruntime`, `pillow`, `numpy`, and `certifi`
-
-### Verify Installation
+From the repository root on a Mac with Xcode Command Line Tools installed:
 
 ```bash
-~/.background-removal-tool/venv/bin/python3 ~/.background-removal-tool/remove_bg.py /path/to/photo.jpg
+bash macOS/BackgroundRemoval/build-app.sh
 ```
 
-You should see `photo-nobg.png` appear next to the original.
+The generated application and ZIP are placed in:
 
-## 🖱️ Setting Up the Quick Action
+```text
+macOS/BackgroundRemoval/.build-app/
+```
 
-### Step 1: Open Shortcuts.app
+The command is for developers building the distribution package; normal users should receive the packaged application rather than build it themselves.
 
-Create a **New Shortcut** and name it `Remove Background`.
+## Existing command-line interface
 
-### Step 2: Configure as Quick Action
-
-Tap the **Info** icon (ℹ️) and enable:
-
-- **Use as Quick Action** ✅
-- **Show in:** Finder only
-- **Workflow receives:** Image files
-
-### Step 3: Add Shell Script Action
-
-Add a **Run Shell Script** action with these settings:
-
-| Setting | Value |
-|---------|-------|
-| Shell | `/bin/zsh` |
-| Pass Input | `as arguments` |
-| Run as Administrator | ❌ **UNCHECKED** |
-
-### Step 4: Script Contents
+The original `remove_bg.py` CLI remains available for development and recovery workflows. It is not part of the normal consumer setup path.
 
 ```bash
-for f in "$@"; do "$HOME/.background-removal-tool/venv/bin/python3" "$HOME/.background-removal-tool/remove_bg.py" "$f"; done
+python3 remove_bg.py /path/to/photo.jpg
 ```
 
-> **Note:** The semicolon before `done` is required!
+## Output
 
-### Step 5: Save
+Input images are left untouched. A new transparent PNG is created alongside each source image:
 
-Press `⌘ + S` and you're all set.
-
-## 🎯 Usage
-
-1. Select one or more image files in Finder
-2. Right-click → **Quick Actions** → **Remove Background**
-3. Wait a few seconds
-4. New files appear: `<original>-nobg.png` with transparent backgrounds
-5. macOS notification confirms completion
-
-## 🛠️ Troubleshooting
-
-### Python Version Issues
-
-If `install.sh` fails with a Python version error, the script auto-detects and prefers in this order:
-- `python3.12` → `python3.13` → `python3.11` → `python3.10`
-
-### SSL Certificate Errors
-
-If you see `CERTIFICATE_VERIFY_FAILED` during model download, `remove_bg.py` already uses `certifi`'s CA bundle explicitly to avoid this.
-
-### Fresh Install
-
-If you need to start over:
-
-```bash
-rm -rf ~/.background-removal-tool
-cd ~/bg-removal-tool
-bash install.sh
+```text
+original.jpg
+original-nobg.png
 ```
 
-The script uses `venv --clear` and verifies the Python interpreter version automatically.
+## Privacy
 
-## 📁 Project Structure
+The background-removal operation runs locally. Images are not uploaded to a background-removal service.
 
+The first-run setup does require network access to install dependencies and obtain the AI model.
+
+## Project structure
+
+```text
+background-removal/
+├── macOS/
+│   └── BackgroundRemoval/
+│       ├── BackgroundRemovalApp.swift
+│       ├── Info.plist
+│       ├── setup-runtime.command
+│       ├── install-quick-action.command
+│       └── build-app.sh
+├── remove_bg.py
+├── cutout/
+├── serving/
+├── pyproject.toml
+└── README.md
 ```
-bg-removal-tool/
-├── install.sh              # One‑click setup
-├── remove_bg.py            # Core background removal script
-└── README.md               # This file
-```
 
-## 🤝 Contributing
+## License
 
-Contributions are welcome! Please open an issue or submit a PR.
-
-## 📄 License
-
-MIT License – use it however you like.
-
----
-
-<p align="center">
-  Made with ❤️ for macOS users who just want to remove backgrounds without the cloud
-</p>
+MIT License.
