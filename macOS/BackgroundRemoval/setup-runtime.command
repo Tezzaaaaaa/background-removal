@@ -15,7 +15,7 @@ mkdir -p "$RUNTIME"
 # Python or use Terminal. uv supplies a managed CPython interpreter.
 if [[ ! -x "$UV" ]]; then
   echo "Downloading setup runtime..."
-  UV_INSTALL_DIR="$RUNTIME" curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | env UV_INSTALL_DIR="$RUNTIME" sh
+  curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | env UV_INSTALL_DIR="$RUNTIME" UV_NO_MODIFY_PATH=1 sh
   [[ -x "$UV" ]] || { echo "Could not install the setup runtime."; exit 1; }
 fi
 
@@ -30,8 +30,6 @@ fi
 
 install -m 755 "$RESOURCE_DIR/remove_bg.py" "$RUNTIME/remove_bg.py"
 
-# Download and checksum the AI model during setup, rather than surprising the
-# user on their first Finder action.
 echo "Downloading AI model..."
 "$PY" "$RUNTIME/remove_bg.py" --download-model
 
