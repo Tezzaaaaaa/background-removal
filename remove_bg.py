@@ -18,8 +18,11 @@ import hashlib
 import ssl
 import urllib.request
 
-MODEL_URL = "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx"
-MODEL_MD5 = "60024c5c889badc19c04ad937298a77b"
+# Pinned to a specific Hugging Face revision containing the U²-Net ONNX
+# checkpoint. The model repository identifies the weights as Apache-2.0 and
+# the checkpoint as based on xuebinqin/U-2-Net.
+MODEL_URL = "https://huggingface.co/Heliosoph/u2net-onnx/resolve/7fc34de/u2net.onnx"
+MODEL_SHA256 = "8d10d2f3bb75ae3b6d527c77944fc5e7dcd94b29809d47a739a7a728a912b491"
 MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model")
 MODEL_PATH = os.path.join(MODEL_DIR, "u2net.onnx")
 
@@ -45,8 +48,8 @@ def notify(title, message):
         pass
 
 
-def md5_of(path):
-    h = hashlib.md5()
+def sha256_of(path):
+    h = hashlib.sha256()
     with open(path, "rb") as f:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
             h.update(chunk)
@@ -55,34 +58,39 @@ def md5_of(path):
 
 def ensure_model():
     os.makedirs(MODEL_DIR, exist_ok=True)
-    if os.path.isfile(MODEL_PATH) and md5_of(MODEL_PATH) == MODEL_MD5:
+    if os.path.isfile(MODEL_PATH) and sha256_of(MODEL_PATH) == MODEL_SHA256:
         return
     print("Downloading segmentation model (one-time, ~176MB)...")
     notify("Background Removal — First Run", "Downloading AI model (~176MB), this happens once...")
 
     context = _ssl_context()
     tmp_path = MODEL_PATH + ".part"
-    with urllib.request.urlopen(MODEL_URL, context=context) as resp, open(tmp_path, "wb") as f:
-        total = resp.getheader("Content-Length")
-        total = int(total) if total else None
-        downloaded = 0
-        last_pct = -1
-        while True:
-            chunk = resp.read(1024 * 1024)
-            if not chunk:
-                break
-            f.write(chunk)
-            downloaded += len(chunk)
-            if total:
-                pct = downloaded * 100 // total
-                if pct != last_pct:
-                    print(f"\r  {pct}%", end="", flush=True)
-                    last_pct = pct
-    print()
-    if md5_of(tmp_path) != MODEL_MD5:
-        os.remove(tmp_path)
-        raise RuntimeError("Downloaded model failed checksum verification.")
-    os.replace(tmp_path, MODEL_PATH)
+    try:
+        with urllib.request.urlopen(MODEL_URL, context=context) as resp, open(tmp_path, "wb") as f:
+            total = resp.getheader("Content-Length")
+            total = int(total) if total else None
+            downloaded = 0
+            last_pct = -1
+            while True:
+                chunk = resp.read(1024 * 1024)
+                if not chunk:
+                    break
+                f.write(chunk)
+                downloaded += len(chunk)
+                if total:
+                    pct = downloaded * 100 // total
+                    if pct != last_pct:
+                        print(f"\r  {pct}%", end="", flush=True)
+                        last_pct = pct
+        print()
+        if sha256_of(tmp_path) != MODEL_SHA256:
+            os.remove(tmp_path)
+            raise RuntimeError("Downloaded model failed SHA-256 verification.")
+        os.replace(tmp_path, MODEL_PATH)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        raise
 
 
 def remove_background(session, img):
