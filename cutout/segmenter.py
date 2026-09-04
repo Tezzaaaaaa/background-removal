@@ -1,4 +1,4 @@
-"""Core segmentation engine used by Cutout."""
+"""Core segmentation engines used by Cutout."""
 from abc import ABC, abstractmethod
 
 import numpy as np
