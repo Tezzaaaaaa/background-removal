@@ -46,19 +46,38 @@ final class SetupManager: ObservableObject {
     }
 
     private func runSetup() throws {
-        guard ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 10 else {
-            throw SetupError.message("This version of macOS is not supported.")
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        guard version.majorVersion >= 13 else {
+            throw SetupError.message("Background Removal requires macOS 13 or later.")
         }
 
         let appSupport = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/Background Removal", isDirectory: true)
         try FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
 
-        DispatchQueue.main.async { self.progress = 0.2; self.message = "Installing the local processing environment…" }
+        DispatchQueue.main.async {
+            self.progress = 0.15
+            self.message = "Installing the private processing environment…"
+        }
         try runBundledScript(named: "setup-runtime", arguments: [appSupport.path])
 
-        DispatchQueue.main.async { self.progress = 0.8; self.message = "Installing the Finder Quick Action…" }
-        try runBundledScript(named: "install-quick-action", arguments: [appSupport.path])
+        DispatchQueue.main.async {
+            self.progress = 0.95
+            self.message = "Registering the Finder action…"
+        }
+        registerFinderExtension()
+    }
+
+    private func registerFinderExtension() {
+        // Embedded Action Extensions are registered by Launch Services when the
+        // containing application is installed/launched. Opening the app once
+        // here ensures Finder sees the extension without an Automator workflow.
+        let appURL = Bundle.main.bundleURL
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister")
+        process.arguments = ["-f", appURL.path]
+        try? process.run()
+        process.waitUntilExit()
     }
 
     private func runBundledScript(named name: String, arguments: [String]) throws {
