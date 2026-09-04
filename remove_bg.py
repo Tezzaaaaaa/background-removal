@@ -25,9 +25,6 @@ MODEL_PATH = os.path.join(MODEL_DIR, "u2net.onnx")
 
 
 def _ssl_context():
-    # Plain urllib relies on the interpreter's default CA bundle, which is
-    # frequently missing or stale on macOS (a common cause of
-    # CERTIFICATE_VERIFY_FAILED). Prefer certifi's bundle when available.
     try:
         import certifi
         return ssl.create_default_context(cafile=certifi.where())
@@ -58,7 +55,7 @@ def ensure_model():
     if os.path.isfile(MODEL_PATH) and md5_of(MODEL_PATH) == MODEL_MD5:
         return
     print("Downloading segmentation model (one-time, ~176MB)...")
-    notify("Background Removal — First Run", "Downloading AI model (~176MB), this happens once...")
+    notify("Background Removal — Setup", "Downloading AI model (~176MB)...")
 
     context = _ssl_context()
     tmp_path = MODEL_PATH + ".part"
@@ -119,6 +116,14 @@ def remove_background(session, img):
 
 
 def main():
+    if "--download-model" in sys.argv[1:]:
+        try:
+            ensure_model()
+        except Exception as e:
+            print(f"ERROR downloading model: {e}", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
     paths = [p for p in sys.argv[1:] if p.strip()]
     if not paths:
         notify("Background Removal", "No image files were provided.")
