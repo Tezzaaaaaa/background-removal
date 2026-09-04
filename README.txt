@@ -1,28 +1,100 @@
-# Personal Background Removal Tool
+![](banner.jpg)
 
-*A zero‑fuss, right‑click background remover for macOS.*
+# Background Removal Tool
 
----
+Remove image backgrounds with a single command using neural-network-based edge detection.
 
-## Overview
+## What it does
 
-Remove backgrounds from images with a single right‑click in Finder.  
-Everything runs locally—no cloud, no accounts, no cost.
+This tool removes backgrounds from images and outputs transparent PNGs. It is designed for clean, accurate cutouts while preserving fine detail and keeping the original image dimensions.
 
-**Status:** Installed and working (Quick Action confirmed).
+## Project
 
----
+Built and maintained by **Tere** with **Claude** as the coding partner.
 
-## Quick Start
+The project is being developed as a reusable background-removal component for a larger media-production workflow.
 
-1. Right‑click one or more images in Finder.  
-2. Choose **Quick Actions → Remove Background**.  
-3. A transparent PNG (`original‑nobg.png`) appears next to each original in seconds.
+## Requirements
 
----
+* Python 3.12
+* The dependencies listed in `requirements.txt`
+* A first run downloads and caches the model (~500 MB)
 
-## Installation (already done, keep for reference)
+## Installation
+
+Create the virtual environment and install the dependencies:
 
 ```bash
-cd ~/bg-removal-tool
-bash install.sh
+python3.12 -m venv ~/.venv/background-removal
+~/.venv/background-removal/bin/pip install -r requirements.txt
+```
+
+Optional: create a convenient command in `~/bin`:
+
+```bash
+ln -s /path/to/background-removal/run ~/bin/remove-background
+```
+
+## Usage
+
+### Direct
+
+```bash
+./run remove <input_image> <output_image>
+```
+
+### Convenience command
+
+```bash
+remove-background <input_image> <output_image>
+```
+
+## Examples
+
+Remove the background from a photo:
+
+```bash
+./run remove photo.jpg photo_no_bg.png
+```
+
+Process a product image:
+
+```bash
+./run remove product.jpg transparent_product.png
+```
+
+Process a portrait:
+
+```bash
+remove-background portrait.jpg portrait_cutout.png
+```
+
+## Output
+
+* Output is always a transparent PNG.
+* If a non-PNG extension is supplied, it is replaced with `.png`.
+* Output dimensions match the input image exactly.
+
+## Development
+
+Run linting:
+
+```bash
+./run lint
+```
+
+Run the background-removal test:
+
+```bash
+./run test src/remove_background_test.py::test_remove_background_creates_alpha
+```
+
+Run the full quality checks:
+
+```bash
+./run check
+```
+
+## License
+
+This project is licensed under [CC BY-NC 4.0](https://darren-static.waft.dev/license) - free to use and modify, but no commercial use without permission.
