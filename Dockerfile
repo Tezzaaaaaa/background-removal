@@ -1,16 +1,15 @@
-FROM python:3.12-slim
-
-ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    HF_HOME=/root/.cache/huggingface
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
-COPY pyproject.toml ./
+COPY package.json package-lock.json* ./
+RUN npm install --omit=dev
+
 COPY cutout/ cutout/
-RUN pip install --no-cache-dir .
 COPY serving/ serving/
 
-EXPOSE 8756
-CMD ["uvicorn", "serving.mcp:app", "--host", "0.0.0.0", "--port", "8756"]
+ENV NODE_ENV=production
+ENV PORT=8000
+
+EXPOSE 8000
+CMD ["node", "serving/app.js"]
