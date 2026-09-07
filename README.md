@@ -1,115 +1,90 @@
-# Background Removal for macOS
+# Background Removal
 
-<p align="center">
-  <b>One-click background removal right from Finder</b><br>
-  Local processing • No account • No cloud upload
-</p>
+Local background removal engine and macOS Finder integration.
 
----
+## JavaScript runtime
 
-## What it does
+The processing engine is being ported to **Node.js 20+ / JavaScript ES modules**. The JS implementation keeps the existing pipeline shape:
 
-- Automatically removes backgrounds from images.
-- Creates transparent PNGs next to the original image.
-- Processes images locally on your Mac.
-- Uses U²-Net for the lightweight Finder workflow.
-- Supports batch processing from Finder.
+`image → segmentation → alpha refinement → RGBA output`
 
-## Setup
+The portable runtime uses `onnxruntime-node` and `sharp`, with U²-Net as the directly compatible ONNX segmentation path. The segmenter is deliberately isolated so a compatible high-resolution model runner can be substituted without rewriting the pipeline.
 
-The normal user experience requires **no Terminal commands** and does not require Python to be installed first.
-
-1. Download **Background Removal**.
-2. Open the app.
-3. Select **Set Up** on first launch.
-4. Let setup install its private runtime, required packages, and AI model.
-5. When setup says **You're ready**, use Finder normally.
-
-Then:
-
-**Finder → select an image → right-click → Quick Actions → Remove Background**
-
-The resulting transparent PNG is saved beside the original as:
-
-```text
-photo-nobg.png
-```
-
-### What first-run setup does
-
-The setup app automatically prepares the private runtime under:
-
-```text
-~/Library/Application Support/Background Removal/
-```
-
-It installs a private Python runtime, the required packages, downloads and verifies the AI model once, and registers the native Finder Action Extension. The user does not need to install Python, create a virtual environment, run `pip`, configure a Shortcut, or enter shell commands manually.
-
-An internet connection is required during first-time setup to obtain the required components and model. Image processing itself is local.
-
-## Requirements
-
-- macOS 13 or later
-- Internet connection for first-time setup
-
-## Developer build
-
-The repository includes the macOS setup application and native Finder Action Extension sources under `macOS/BackgroundRemoval/`.
-
-From the repository root on a Mac with Xcode Command Line Tools installed:
+### CLI
 
 ```bash
-bash macOS/BackgroundRemoval/build-app.sh
+npm install
+npx cutout input.jpg -o output.png
 ```
 
-The generated application and ZIP are placed in:
-
-```text
-macOS/BackgroundRemoval/.build-app/
-```
-
-The command is for developers building the distribution package; normal users should receive the packaged application rather than build it themselves.
-
-## Existing command-line interface
-
-The original `remove_bg.py` CLI remains available for development and recovery workflows. It is not part of the normal consumer setup path.
+or:
 
 ```bash
-python3 remove_bg.py /path/to/photo.jpg
+node cutout/cli.js input.jpg -o output.png
 ```
 
-## Output
+### HTTP API
 
-Input images are left untouched. A new transparent PNG is created alongside each source image:
+```bash
+npm install
+npm start
+```
+
+Health check:
 
 ```text
-original.jpg
-original-nobg.png
+GET /health
 ```
+
+Background removal:
+
+```text
+POST /remove
+Content-Type: multipart/form-data
+field: file
+```
+
+Accepted formats: JPEG, PNG, WebP. Maximum upload size: 22 MB.
+
+### Tests
+
+```bash
+npm test
+```
+
+GitHub Actions runs the Node.js test suite on the JavaScript port branch and pull requests into `main`.
+
+## macOS integration
+
+The native macOS application and Finder Quick Action remain Swift because Swift is the appropriate native language for the macOS shell and Finder extension. The processing engine is being separated from that native shell so it can also be used by KEFE and the HTTP/MCP layers.
+
+The existing Python runtime remains on this branch only where the current macOS packaging path still depends on it. It is not the target processing implementation for the JavaScript port.
 
 ## Privacy
 
-The background-removal operation runs locally. Images are not uploaded to a background-removal service.
+Image processing is local. Images are not uploaded to a background-removal service.
 
-The first-run setup does require network access to install dependencies and obtain the AI model.
+The first model download requires an internet connection.
 
 ## Project structure
 
 ```text
 background-removal/
+├── cutout/
+│   ├── cli.js
+│   ├── decontaminate.js
+│   ├── index.js
+│   ├── pipeline.js
+│   ├── refiner.js
+│   ├── segmenter.js
+│   └── u2net.js
+├── serving/
+│   └── app.js
+├── test/
+│   └── pipeline.test.js
 ├── macOS/
 │   └── BackgroundRemoval/
-│       ├── BackgroundRemovalApp.swift
-│       ├── FinderAction/
-│       │   ├── FinderAction.swift
-│       │   └── Info.plist
-│       ├── Info.plist
-│       ├── setup-runtime.command
-│       └── build-app.sh
-├── remove_bg.py
-├── cutout/
-├── serving/
-├── pyproject.toml
+├── package.json
 └── README.md
 ```
 

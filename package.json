@@ -1,0 +1,14 @@
+{
+  "name": "kefe-background-removal",
+  "version": "2.0.0",
+  "description": "Cutout — a self-hosted background removal engine for Node.js",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "bin": { "cutout": "./cutout/cli.js" },
+  "scripts": { "test": "node --test", "start": "node serving/app.js" },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "onnxruntime-node": "^1.20.1",
+    "sharp": "^0.33.5"
+  }
+}
